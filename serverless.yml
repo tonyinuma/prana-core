@@ -1,0 +1,16 @@
+service: prana-core
+frameworkVersion: '4'
+configValidationMode: error
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs24.x
+  region: ${opt:region, env:AWS_REGION, 'us-east-1'}
+  stage: ${opt:stage, env:STAGE, 'dev'}
+  stackName: ${self:service}-${sls:stage}
+
+plugins:
+  - serverless-offline
+
+functions: {}
