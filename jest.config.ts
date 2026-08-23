@@ -6,6 +6,7 @@ const config: import('jest').Config = {
     clearMocks: true,
     collectCoverageFrom: [
         'src/**/*.ts',
+        '!src/application/dto/**/*.ts',
         '!src/application/ports/**/*.ts',
         '!src/domain/repositories/**/*.ts',
     ],
