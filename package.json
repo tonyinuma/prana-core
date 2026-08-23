@@ -30,9 +30,13 @@
   },
   "homepage": "https://github.com/tonyinuma/prana-core#readme",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.13.3",
+    "eslint": "^10.9.0",
+    "globals": "^17.11.0",
     "serverless": "^4.41.0",
     "serverless-offline": "^14.8.0",
-    "typescript": "^7.0.2"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.67.0"
   }
 }
