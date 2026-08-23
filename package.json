@@ -31,13 +31,17 @@
     "homepage": "https://github.com/tonyinuma/prana-core#readme",
     "devDependencies": {
         "@eslint/js": "^10.0.1",
+        "@types/jest": "^30.0.0",
         "@types/node": "^24.13.3",
         "eslint": "^10.9.0",
         "eslint-config-prettier": "^10.1.8",
         "globals": "^17.11.0",
+        "jest": "^30.4.2",
         "prettier": "^3.9.6",
         "serverless": "^4.41.0",
         "serverless-offline": "^14.8.0",
+        "ts-jest": "^29.4.12",
+        "ts-node": "^10.9.2",
         "typescript": "^6.0.3",
         "typescript-eslint": "^8.67.0"
     }

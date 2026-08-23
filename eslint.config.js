@@ -16,5 +16,17 @@ module.exports = defineConfig(
             globals: globals.node,
         },
     },
+    {
+        files: ['tests/**/*.ts'],
+        languageOptions: {
+            globals: globals.jest,
+        },
+    },
+    {
+        files: ['jest.config.ts'],
+        rules: {
+            '@typescript-eslint/no-require-imports': 'off',
+        },
+    },
     prettier,
 );
