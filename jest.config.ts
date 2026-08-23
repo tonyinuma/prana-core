@@ -1,7 +1,7 @@
 const { createDefaultPreset } = require('ts-jest');
 
 const config: import('jest').Config = {
-    ...createDefaultPreset(),
+    ...createDefaultPreset({ tsconfig: 'tsconfig.test.json' }),
     testEnvironment: 'node',
     clearMocks: true,
     collectCoverageFrom: ['src/**/*.ts'],
