@@ -1,6 +1,7 @@
 import { AppointmentStatus } from '../enums/AppointmentStatus';
 import { CountryISO } from '../enums/CountryISO';
 import { DomainError } from '../errors/DomainError';
+import { validateInsuredId } from '../validators/validateInsuredId';
 
 export interface AppointmentProps {
     appointmentId: string;
@@ -19,7 +20,7 @@ export class Appointment {
     public readonly updatedAt: Date;
 
     constructor(props: AppointmentProps) {
-        Appointment.validateInsuredId(props.insuredId);
+        validateInsuredId(props.insuredId);
         Appointment.validateScheduleId(props.scheduleId);
         Appointment.validateCountryISO(props.countryISO);
 
@@ -32,12 +33,6 @@ export class Appointment {
         this.status = AppointmentStatus.Pending;
         this.createdAt = now;
         this.updatedAt = now;
-    }
-
-    private static validateInsuredId(insuredId: string): void {
-        if (typeof insuredId !== 'string' || !/^\d{5}$/.test(insuredId)) {
-            throw new DomainError('insuredId must contain exactly 5 digits');
-        }
     }
 
     private static validateScheduleId(scheduleId: number): void {

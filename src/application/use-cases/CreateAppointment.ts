@@ -2,8 +2,8 @@ import { randomUUID } from 'node:crypto';
 
 import type { AppointmentRepository } from '../../domain/repositories/AppointmentRepository';
 import { Appointment } from '../../domain/entities/Appointment';
-import type { AppointmentResponseDTO } from '../dto/AppointmentResponseDTO';
 import type { CreateAppointmentDTO } from '../dto/CreateAppointmentDTO';
+import type { CreateAppointmentResponseDTO } from '../dto/CreateAppointmentResponseDTO';
 import type { AppointmentPublisher } from '../ports/AppointmentPublisher';
 
 type AppointmentIdGenerator = () => string;
@@ -15,7 +15,7 @@ export class CreateAppointment {
         private readonly generateAppointmentId: AppointmentIdGenerator = randomUUID,
     ) {}
 
-    async execute(input: CreateAppointmentDTO): Promise<AppointmentResponseDTO> {
+    async execute(input: CreateAppointmentDTO): Promise<CreateAppointmentResponseDTO> {
         const appointment = new Appointment({
             appointmentId: this.generateAppointmentId(),
             insuredId: input.insuredId,
