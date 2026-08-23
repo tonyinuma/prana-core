@@ -1,42 +1,44 @@
 {
-  "name": "prana-core",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Backend serverless para el agendamiento de citas medicas en Peru y Chile.",
-  "license": "UNLICENSED",
-  "type": "commonjs",
-  "engines": {
-    "node": ">=24 <25",
-    "npm": ">=11"
-  },
-  "packageManager": "npm@11.9.0",
-  "scripts": {
-    "dev": "serverless offline --stage dev",
-    "build": "tsc",
-    "test": "jest --passWithNoTests",
-    "test:coverage": "jest --coverage --passWithNoTests",
-    "lint": "eslint .",
-    "format": "prettier --write .",
-    "package": "serverless package --stage dev",
-    "deploy": "serverless deploy --stage dev",
-    "remove": "serverless remove --stage dev"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tonyinuma/prana-core.git"
-  },
-  "bugs": {
-    "url": "https://github.com/tonyinuma/prana-core/issues"
-  },
-  "homepage": "https://github.com/tonyinuma/prana-core#readme",
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^24.13.3",
-    "eslint": "^10.9.0",
-    "globals": "^17.11.0",
-    "serverless": "^4.41.0",
-    "serverless-offline": "^14.8.0",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.67.0"
-  }
+    "name": "prana-core",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Backend serverless para el agendamiento de citas medicas en Peru y Chile.",
+    "license": "UNLICENSED",
+    "type": "commonjs",
+    "engines": {
+        "node": ">=24 <25",
+        "npm": ">=11"
+    },
+    "packageManager": "npm@11.9.0",
+    "scripts": {
+        "dev": "serverless offline --stage dev",
+        "build": "tsc",
+        "test": "jest --passWithNoTests",
+        "test:coverage": "jest --coverage --passWithNoTests",
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "package": "serverless package --stage dev",
+        "deploy": "serverless deploy --stage dev",
+        "remove": "serverless remove --stage dev"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/tonyinuma/prana-core.git"
+    },
+    "bugs": {
+        "url": "https://github.com/tonyinuma/prana-core/issues"
+    },
+    "homepage": "https://github.com/tonyinuma/prana-core#readme",
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@types/node": "^24.13.3",
+        "eslint": "^10.9.0",
+        "eslint-config-prettier": "^10.1.8",
+        "globals": "^17.11.0",
+        "prettier": "^3.9.6",
+        "serverless": "^4.41.0",
+        "serverless-offline": "^14.8.0",
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.67.0"
+    }
 }
