@@ -91,6 +91,11 @@ describe('CompleteAppointment', () => {
             'completedAt must be a valid date',
         ],
     ])('rejects %s', async (_scenario, input, expectedMessage) => {
+        const updateStatus = jest.spyOn(appointmentRepository, 'updateStatus');
+
         await expect(completeAppointment.execute(input)).rejects.toThrow(expectedMessage);
+
+        expect(updateStatus).not.toHaveBeenCalled();
+        expect(logger.info).not.toHaveBeenCalled();
     });
 });

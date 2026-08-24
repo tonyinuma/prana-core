@@ -12,6 +12,14 @@ const config: import('jest').Config = {
     ],
     coverageProvider: 'v8',
     coverageDirectory: 'coverage',
+    coverageThreshold: {
+        global: {
+            branches: 100,
+            functions: 100,
+            lines: 100,
+            statements: 100,
+        },
+    },
 };
 
 module.exports = config;

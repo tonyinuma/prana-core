@@ -89,6 +89,46 @@ describe('ProcessCountryAppointment', () => {
         expect(save.mock.invocationCallOrder[0]).toBeLessThan(publish.mock.invocationCallOrder[0]);
     });
 
+    test('does not publish a completion when country persistence fails', async () => {
+        const persistenceError = new Error('MySQL unavailable');
+        jest.spyOn(appointmentRepository, 'save').mockRejectedValue(persistenceError);
+        const publish = jest.spyOn(completionEventPublisher, 'publish');
+
+        await expect(
+            processCountryAppointment.execute({
+                appointmentId: 'appointment-1',
+                insuredId: '00123',
+                scheduleId: 100,
+                countryISO: CountryISO.PE,
+            }),
+        ).rejects.toBe(persistenceError);
+
+        expect(publish).not.toHaveBeenCalled();
+        expect(logger.info.mock.calls.map(([event]) => event)).toEqual([
+            'appointment.country.processing',
+        ]);
+    });
+
+    test('keeps the persisted country appointment when completion publication fails', async () => {
+        const publicationError = new Error('EventBridge unavailable');
+        jest.spyOn(completionEventPublisher, 'publish').mockRejectedValue(publicationError);
+
+        await expect(
+            processCountryAppointment.execute({
+                appointmentId: 'appointment-1',
+                insuredId: '00123',
+                scheduleId: 100,
+                countryISO: CountryISO.PE,
+            }),
+        ).rejects.toBe(publicationError);
+
+        expect(appointmentRepository.getAll()).toHaveLength(1);
+        expect(logger.info.mock.calls.map(([event]) => event)).toEqual([
+            'appointment.country.processing',
+            'appointment.country.persisted',
+        ]);
+    });
+
     test('rejects an appointment for a different country', async () => {
         await expect(
             processCountryAppointment.execute({
@@ -101,6 +141,7 @@ describe('ProcessCountryAppointment', () => {
 
         expect(appointmentRepository.getAll()).toEqual([]);
         expect(completionEventPublisher.getPublishedEvents()).toEqual([]);
+        expect(logger.info).not.toHaveBeenCalled();
     });
 
     test('processes a Chile appointment when configured for Chile', async () => {

@@ -82,6 +82,34 @@ describe('CreateAppointment', () => {
         expect(save.mock.invocationCallOrder[0]).toBeLessThan(publish.mock.invocationCallOrder[0]);
     });
 
+    test('does not publish when persistence fails', async () => {
+        const persistenceError = new Error('DynamoDB unavailable');
+        jest.spyOn(appointmentRepository, 'save').mockRejectedValue(persistenceError);
+        const publish = jest.spyOn(appointmentPublisher, 'publish');
+
+        await expect(createAppointment.execute(validInput)).rejects.toBe(persistenceError);
+
+        expect(publish).not.toHaveBeenCalled();
+        expect(logger.info).toHaveBeenCalledTimes(1);
+        expect(logger.info).toHaveBeenCalledWith(
+            'appointment.received',
+            expect.objectContaining({ appointmentId }),
+        );
+    });
+
+    test('keeps the persisted appointment when publication fails', async () => {
+        const publicationError = new Error('SNS unavailable');
+        jest.spyOn(appointmentPublisher, 'publish').mockRejectedValue(publicationError);
+
+        await expect(createAppointment.execute(validInput)).rejects.toBe(publicationError);
+
+        expect(appointmentRepository.getAll()).toHaveLength(1);
+        expect(logger.info.mock.calls.map(([event]) => event)).toEqual([
+            'appointment.received',
+            'appointment.created',
+        ]);
+    });
+
     test('logs the main events with the appointment correlation data', async () => {
         await createAppointment.execute(validInput);
 
