@@ -1,0 +1,255 @@
+openapi: 3.0.3
+
+info:
+    title: Prana Core Appointment API
+    version: 0.1.0
+    description: API para registrar y consultar solicitudes de agendamiento médico en Perú y Chile.
+    license:
+        name: UNLICENSED
+
+security: []
+
+servers:
+    - url: http://localhost:3000
+      description: Entorno local con Serverless Offline
+
+tags:
+    - name: Appointments
+      description: Operaciones de agendamiento de citas
+
+paths:
+    /appointments:
+        post:
+            tags:
+                - Appointments
+            summary: Registrar una solicitud de agendamiento
+            description: Registra la solicitud con estado pending e inicia su procesamiento asíncrono.
+            operationId: createAppointment
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAppointmentRequest'
+                        examples:
+                            peru:
+                                summary: Solicitud para Perú
+                                value:
+                                    insuredId: '00123'
+                                    scheduleId: 100
+                                    countryISO: PE
+                            chile:
+                                summary: Solicitud para Chile
+                                value:
+                                    insuredId: '00456'
+                                    scheduleId: 200
+                                    countryISO: CL
+            responses:
+                '202':
+                    description: Solicitud aceptada para procesamiento asíncrono
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAppointmentResponse'
+                            example:
+                                appointmentId: 550e8400-e29b-41d4-a716-446655440000
+                                status: pending
+                                message: Appointment scheduling is in process
+                '400':
+                    description: JSON mal formado o datos de entrada inválidos
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                invalidInsuredId:
+                                    summary: Identificador del asegurado inválido
+                                    value:
+                                        message: insuredId must contain exactly 5 digits
+                                invalidScheduleId:
+                                    summary: Identificador de horario inválido
+                                    value:
+                                        message: scheduleId must be a positive integer
+                                invalidCountry:
+                                    summary: País no permitido
+                                    value:
+                                        message: countryISO must be PE or CL
+                                malformedJson:
+                                    summary: JSON mal formado
+                                    value:
+                                        message: Request body must contain valid JSON
+                '500':
+                    $ref: '#/components/responses/InternalServerError'
+
+    /appointments/{insuredId}:
+        get:
+            tags:
+                - Appointments
+            summary: Consultar las citas de un asegurado
+            description: Devuelve todas las solicitudes del asegurado, incluyendo su estado actual.
+            operationId: getAppointmentsByInsured
+            parameters:
+                - name: insuredId
+                  in: path
+                  required: true
+                  description: Identificador de exactamente cinco dígitos; puede contener ceros a la izquierda.
+                  schema:
+                      $ref: '#/components/schemas/InsuredId'
+                  example: '00123'
+            responses:
+                '200':
+                    description: Lista de citas encontrada; puede ser un arreglo vacío
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Appointment'
+                            examples:
+                                withAppointments:
+                                    summary: Asegurado con una cita
+                                    value:
+                                        - appointmentId: 550e8400-e29b-41d4-a716-446655440000
+                                          insuredId: '00123'
+                                          scheduleId: 100
+                                          countryISO: PE
+                                          status: completed
+                                          createdAt: '2026-08-22T18:00:00.000Z'
+                                          updatedAt: '2026-08-22T18:00:05.000Z'
+                                withoutAppointments:
+                                    summary: Asegurado sin citas
+                                    value: []
+                '400':
+                    description: Identificador del asegurado inválido
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            example:
+                                message: insuredId must contain exactly 5 digits
+                '500':
+                    $ref: '#/components/responses/InternalServerError'
+
+components:
+    schemas:
+        InsuredId:
+            type: string
+            description: Identificador del asegurado que conserva posibles ceros a la izquierda.
+            pattern: '^[0-9]{5}$'
+            minLength: 5
+            maxLength: 5
+            example: '00123'
+
+        CountryISO:
+            type: string
+            description: Código ISO del país donde se procesará la cita.
+            enum:
+                - PE
+                - CL
+            example: PE
+
+        AppointmentStatus:
+            type: string
+            description: Estado actual del procesamiento de la cita.
+            enum:
+                - pending
+                - completed
+            example: pending
+
+        CreateAppointmentRequest:
+            type: object
+            required:
+                - insuredId
+                - scheduleId
+                - countryISO
+            properties:
+                insuredId:
+                    $ref: '#/components/schemas/InsuredId'
+                scheduleId:
+                    type: integer
+                    minimum: 1
+                    description: Identificador positivo del horario solicitado.
+                    example: 100
+                countryISO:
+                    $ref: '#/components/schemas/CountryISO'
+
+        CreateAppointmentResponse:
+            type: object
+            required:
+                - appointmentId
+                - status
+                - message
+            properties:
+                appointmentId:
+                    type: string
+                    format: uuid
+                    description: Identificador único generado para la cita.
+                    example: 550e8400-e29b-41d4-a716-446655440000
+                status:
+                    type: string
+                    enum:
+                        - pending
+                    description: Estado inicial de la solicitud.
+                    example: pending
+                message:
+                    type: string
+                    description: Confirmación de que comenzó el procesamiento.
+                    example: Appointment scheduling is in process
+
+        Appointment:
+            type: object
+            required:
+                - appointmentId
+                - insuredId
+                - scheduleId
+                - countryISO
+                - status
+                - createdAt
+                - updatedAt
+            properties:
+                appointmentId:
+                    type: string
+                    format: uuid
+                    description: Identificador único de la cita.
+                    example: 550e8400-e29b-41d4-a716-446655440000
+                insuredId:
+                    $ref: '#/components/schemas/InsuredId'
+                scheduleId:
+                    type: integer
+                    minimum: 1
+                    description: Identificador del horario solicitado.
+                    example: 100
+                countryISO:
+                    $ref: '#/components/schemas/CountryISO'
+                status:
+                    $ref: '#/components/schemas/AppointmentStatus'
+                createdAt:
+                    type: string
+                    format: date-time
+                    description: Fecha de creación en formato ISO 8601 y UTC.
+                    example: '2026-08-22T18:00:00.000Z'
+                updatedAt:
+                    type: string
+                    format: date-time
+                    description: Fecha de última actualización en formato ISO 8601 y UTC.
+                    example: '2026-08-22T18:00:05.000Z'
+
+        ErrorResponse:
+            type: object
+            required:
+                - message
+            properties:
+                message:
+                    type: string
+                    description: Descripción segura del error.
+                    example: insuredId must contain exactly 5 digits
+
+    responses:
+        InternalServerError:
+            description: Error interno inesperado
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorResponse'
+                    example:
+                        message: Internal server error
