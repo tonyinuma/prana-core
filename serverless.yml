@@ -11,6 +11,17 @@ provider:
     stackName: ${self:service}-${sls:stage}
     environment:
         APPOINTMENTS_TABLE_NAME: ${self:custom.appointmentsTableName}
+    iam:
+        role:
+            statements:
+                - Effect: Allow
+                  Action:
+                      - dynamodb:PutItem
+                      - dynamodb:Query
+                  Resource:
+                      - Fn::GetAtt:
+                            - AppointmentsTable
+                            - Arn
 
 custom:
     appointmentsTableName: ${self:service}-${sls:stage}-appointments
