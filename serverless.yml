@@ -33,6 +33,8 @@ provider:
 custom:
     appointmentsTableName: ${self:service}-${sls:stage}-appointments
     appointmentTopicName: ${self:service}-${sls:stage}-appointment-topic
+    appointmentPeQueueName: ${self:service}-${sls:stage}-appointments-pe
+    appointmentClQueueName: ${self:service}-${sls:stage}-appointments-cl
 
 plugins:
     - serverless-offline
@@ -69,3 +71,85 @@ resources:
             Type: AWS::SNS::Topic
             Properties:
                 TopicName: ${self:custom.appointmentTopicName}
+        AppointmentPeQueue:
+            Type: AWS::SQS::Queue
+            Properties:
+                QueueName: ${self:custom.appointmentPeQueueName}
+        AppointmentClQueue:
+            Type: AWS::SQS::Queue
+            Properties:
+                QueueName: ${self:custom.appointmentClQueueName}
+        AppointmentPeQueuePolicy:
+            Type: AWS::SQS::QueuePolicy
+            Properties:
+                Queues:
+                    - Ref: AppointmentPeQueue
+                PolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                        - Sid: AllowAppointmentTopicToSendMessages
+                          Effect: Allow
+                          Principal:
+                              Service: sns.amazonaws.com
+                          Action:
+                              - sqs:SendMessage
+                          Resource:
+                              - Fn::GetAtt:
+                                    - AppointmentPeQueue
+                                    - Arn
+                          Condition:
+                              ArnEquals:
+                                  aws:SourceArn:
+                                      Ref: AppointmentTopic
+        AppointmentClQueuePolicy:
+            Type: AWS::SQS::QueuePolicy
+            Properties:
+                Queues:
+                    - Ref: AppointmentClQueue
+                PolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                        - Sid: AllowAppointmentTopicToSendMessages
+                          Effect: Allow
+                          Principal:
+                              Service: sns.amazonaws.com
+                          Action:
+                              - sqs:SendMessage
+                          Resource:
+                              - Fn::GetAtt:
+                                    - AppointmentClQueue
+                                    - Arn
+                          Condition:
+                              ArnEquals:
+                                  aws:SourceArn:
+                                      Ref: AppointmentTopic
+        AppointmentPeSubscription:
+            Type: AWS::SNS::Subscription
+            Properties:
+                TopicArn:
+                    Ref: AppointmentTopic
+                Protocol: sqs
+                Endpoint:
+                    Fn::GetAtt:
+                        - AppointmentPeQueue
+                        - Arn
+                RawMessageDelivery: false
+                FilterPolicyScope: MessageAttributes
+                FilterPolicy:
+                    countryISO:
+                        - PE
+        AppointmentClSubscription:
+            Type: AWS::SNS::Subscription
+            Properties:
+                TopicArn:
+                    Ref: AppointmentTopic
+                Protocol: sqs
+                Endpoint:
+                    Fn::GetAtt:
+                        - AppointmentClQueue
+                        - Arn
+                RawMessageDelivery: false
+                FilterPolicyScope: MessageAttributes
+                FilterPolicy:
+                    countryISO:
+                        - CL
