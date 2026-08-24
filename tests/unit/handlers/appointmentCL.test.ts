@@ -8,6 +8,7 @@ describe('appointmentCL handler composition', () => {
     const originalMySqlUser = process.env.MYSQL_USER;
     const originalMySqlPassword = process.env.MYSQL_PASSWORD;
     const originalMySqlDatabaseCl = process.env.MYSQL_DATABASE_CL;
+    const originalEventBusArn = process.env.APPOINTMENT_EVENT_BUS_ARN;
 
     beforeAll(() => {
         process.env.MYSQL_HOST = '127.0.0.1';
@@ -15,6 +16,8 @@ describe('appointmentCL handler composition', () => {
         process.env.MYSQL_USER = 'prana';
         process.env.MYSQL_PASSWORD = 'local-password';
         process.env.MYSQL_DATABASE_CL = 'prana_cl';
+        process.env.APPOINTMENT_EVENT_BUS_ARN =
+            'arn:aws:events:us-east-1:123456789012:event-bus/prana-appointment-events';
     });
 
     afterAll(() => {
@@ -23,6 +26,7 @@ describe('appointmentCL handler composition', () => {
         restoreEnvironmentVariable('MYSQL_USER', originalMySqlUser);
         restoreEnvironmentVariable('MYSQL_PASSWORD', originalMySqlPassword);
         restoreEnvironmentVariable('MYSQL_DATABASE_CL', originalMySqlDatabaseCl);
+        restoreEnvironmentVariable('APPOINTMENT_EVENT_BUS_ARN', originalEventBusArn);
     });
 
     test('configures and reuses the Chile handler', async () => {

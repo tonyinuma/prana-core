@@ -1,7 +1,12 @@
+import { EventBridgeClient } from '@aws-sdk/client-eventbridge';
+
 import { ProcessCountryAppointment } from '../../application/use-cases/ProcessCountryAppointment';
 import { CountryISO } from '../../domain/enums/CountryISO';
-import { getMySqlConnectionConfig } from '../../infrastructure/config/environment';
-import { InMemoryCompletionEventPublisher } from '../../infrastructure/memory/InMemoryCompletionEventPublisher';
+import {
+    getAppointmentEventBusArn,
+    getMySqlConnectionConfig,
+} from '../../infrastructure/config/environment';
+import { EventBridgeCompletionPublisher } from '../../infrastructure/eventbridge/EventBridgeCompletionPublisher';
 import { createMySqlPool } from '../../infrastructure/mysql/createMySqlPool';
 import { MySqlAppointmentRepository } from '../../infrastructure/mysql/MySqlAppointmentRepository';
 import {
@@ -14,7 +19,10 @@ export function configureCountryAppointmentHandler(
 ): CountryAppointmentSqsHandler {
     const pool = createMySqlPool(getMySqlConnectionConfig(countryISO));
     const repository = new MySqlAppointmentRepository(pool);
-    const completionEventPublisher = new InMemoryCompletionEventPublisher();
+    const completionEventPublisher = new EventBridgeCompletionPublisher(
+        new EventBridgeClient({}),
+        getAppointmentEventBusArn(),
+    );
     const processCountryAppointment = new ProcessCountryAppointment(
         repository,
         completionEventPublisher,

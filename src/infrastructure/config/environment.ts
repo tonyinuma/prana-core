@@ -16,6 +16,10 @@ export function getAppointmentTopicArn(): string {
     return getRequiredEnvironmentVariable('APPOINTMENT_TOPIC_ARN');
 }
 
+export function getAppointmentEventBusArn(): string {
+    return getRequiredEnvironmentVariable('APPOINTMENT_EVENT_BUS_ARN');
+}
+
 export function getMySqlConnectionConfig(countryISO: CountryISO): MySqlConnectionConfig {
     const databaseVariable =
         countryISO === CountryISO.PE ? 'MYSQL_DATABASE_PE' : 'MYSQL_DATABASE_CL';

@@ -1,6 +1,7 @@
 import { CountryISO } from '../../../../src/domain/enums/CountryISO';
 import {
     getAppointmentsTableName,
+    getAppointmentEventBusArn,
     getAppointmentTopicArn,
     getMySqlConnectionConfig,
 } from '../../../../src/infrastructure/config/environment';
@@ -8,6 +9,7 @@ import {
 describe('infrastructure environment configuration', () => {
     const originalTableName = process.env.APPOINTMENTS_TABLE_NAME;
     const originalTopicArn = process.env.APPOINTMENT_TOPIC_ARN;
+    const originalEventBusArn = process.env.APPOINTMENT_EVENT_BUS_ARN;
     const originalMySqlHost = process.env.MYSQL_HOST;
     const originalMySqlPort = process.env.MYSQL_PORT;
     const originalMySqlUser = process.env.MYSQL_USER;
@@ -18,6 +20,7 @@ describe('infrastructure environment configuration', () => {
     afterEach(() => {
         restoreEnvironmentVariable('APPOINTMENTS_TABLE_NAME', originalTableName);
         restoreEnvironmentVariable('APPOINTMENT_TOPIC_ARN', originalTopicArn);
+        restoreEnvironmentVariable('APPOINTMENT_EVENT_BUS_ARN', originalEventBusArn);
         restoreEnvironmentVariable('MYSQL_HOST', originalMySqlHost);
         restoreEnvironmentVariable('MYSQL_PORT', originalMySqlPort);
         restoreEnvironmentVariable('MYSQL_USER', originalMySqlUser);
@@ -62,6 +65,27 @@ describe('infrastructure environment configuration', () => {
 
         expect(() => getAppointmentTopicArn()).toThrow(
             'APPOINTMENT_TOPIC_ARN environment variable is required',
+        );
+    });
+
+    test('returns the configured appointment event bus ARN', () => {
+        process.env.APPOINTMENT_EVENT_BUS_ARN =
+            'arn:aws:events:us-east-1:123456789012:event-bus/prana-appointment-events';
+
+        expect(getAppointmentEventBusArn()).toBe(
+            'arn:aws:events:us-east-1:123456789012:event-bus/prana-appointment-events',
+        );
+    });
+
+    test.each([undefined, ''])('rejects a missing event bus ARN: %p', (eventBusArn) => {
+        if (eventBusArn === undefined) {
+            delete process.env.APPOINTMENT_EVENT_BUS_ARN;
+        } else {
+            process.env.APPOINTMENT_EVENT_BUS_ARN = eventBusArn;
+        }
+
+        expect(() => getAppointmentEventBusArn()).toThrow(
+            'APPOINTMENT_EVENT_BUS_ARN environment variable is required',
         );
     });
 

@@ -29,12 +29,20 @@ provider:
                       - sns:Publish
                   Resource:
                       - Ref: AppointmentTopic
+                - Effect: Allow
+                  Action:
+                      - events:PutEvents
+                  Resource:
+                      - Fn::GetAtt:
+                            - AppointmentEventBus
+                            - Arn
 
 custom:
     appointmentsTableName: ${self:service}-${sls:stage}-appointments
     appointmentTopicName: ${self:service}-${sls:stage}-appointment-topic
     appointmentPeQueueName: ${self:service}-${sls:stage}-appointments-pe
     appointmentClQueueName: ${self:service}-${sls:stage}-appointments-cl
+    appointmentEventBusName: prana-appointment-events
 
 plugins:
     - serverless-offline
@@ -59,6 +67,10 @@ functions:
             MYSQL_USER: ${env:MYSQL_USER}
             MYSQL_PASSWORD: ${env:MYSQL_PASSWORD}
             MYSQL_DATABASE_PE: ${env:MYSQL_DATABASE_PE}
+            APPOINTMENT_EVENT_BUS_ARN:
+                Fn::GetAtt:
+                    - AppointmentEventBus
+                    - Arn
         events:
             - sqs:
                   arn:
@@ -77,6 +89,10 @@ functions:
             MYSQL_USER: ${env:MYSQL_USER}
             MYSQL_PASSWORD: ${env:MYSQL_PASSWORD}
             MYSQL_DATABASE_CL: ${env:MYSQL_DATABASE_CL}
+            APPOINTMENT_EVENT_BUS_ARN:
+                Fn::GetAtt:
+                    - AppointmentEventBus
+                    - Arn
         events:
             - sqs:
                   arn:
@@ -107,6 +123,10 @@ resources:
             Type: AWS::SNS::Topic
             Properties:
                 TopicName: ${self:custom.appointmentTopicName}
+        AppointmentEventBus:
+            Type: AWS::Events::EventBus
+            Properties:
+                Name: ${self:custom.appointmentEventBusName}
         AppointmentPeQueue:
             Type: AWS::SQS::Queue
             Properties:
