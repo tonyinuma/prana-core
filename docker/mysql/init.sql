@@ -3,21 +3,3 @@ CREATE DATABASE IF NOT EXISTS prana_cl;
 
 GRANT ALL PRIVILEGES ON prana_pe.* TO 'prana'@'%';
 GRANT ALL PRIVILEGES ON prana_cl.* TO 'prana'@'%';
-
-CREATE TABLE IF NOT EXISTS prana_pe.appointments (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    appointment_id VARCHAR(36) NOT NULL UNIQUE,
-    insured_id VARCHAR(5) NOT NULL,
-    schedule_id BIGINT NOT NULL,
-    country_iso CHAR(2) NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS prana_cl.appointments (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    appointment_id VARCHAR(36) NOT NULL UNIQUE,
-    insured_id VARCHAR(5) NOT NULL,
-    schedule_id BIGINT NOT NULL,
-    country_iso CHAR(2) NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);

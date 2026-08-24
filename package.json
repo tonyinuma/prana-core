@@ -13,6 +13,7 @@
     "scripts": {
         "dev": "serverless offline --stage dev",
         "db:check": "node --env-file=.env --require ts-node/register scripts/checkMySqlConnection.ts",
+        "db:init": "node --env-file=.env --require ts-node/register scripts/initializeMySqlSchema.ts",
         "build": "tsc",
         "test": "jest --passWithNoTests",
         "test:coverage": "jest --coverage --passWithNoTests",
