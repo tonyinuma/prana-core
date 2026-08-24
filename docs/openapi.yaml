@@ -10,8 +10,8 @@ info:
 security: []
 
 servers:
-    - url: http://localhost:3000
-      description: Entorno local con Serverless Offline
+    - url: .
+      description: Mismo origen desde el que se sirve la documentación
 
 tags:
     - name: Appointments

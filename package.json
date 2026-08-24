@@ -53,6 +53,7 @@
         "@aws-sdk/client-eventbridge": "^3.1116.0",
         "@aws-sdk/client-sns": "^3.1116.0",
         "@aws-sdk/lib-dynamodb": "^3.1116.0",
-        "mysql2": "^3.24.0"
+        "mysql2": "^3.24.0",
+        "yaml": "^2.9.0"
     }
 }

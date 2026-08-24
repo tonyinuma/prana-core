@@ -87,6 +87,21 @@ describe('appointment HTTP handler', () => {
         expect(JSON.parse(response.body ?? '')).toEqual({ message: 'Route not found' });
     });
 
+    test('routes Swagger UI and OpenAPI document requests', async () => {
+        const docsResponse = await handler(httpEvent('GET /docs'));
+        const openApiResponse = await handler(httpEvent('GET /openapi.json'));
+
+        expect(docsResponse.statusCode).toBe(200);
+        expect(docsResponse.headers?.['content-type']).toBe('text/html; charset=utf-8');
+        expect(docsResponse.body).toContain('swagger-ui');
+        expect(openApiResponse.statusCode).toBe(200);
+        expect(JSON.parse(openApiResponse.body ?? '')).toEqual(
+            expect.objectContaining({
+                openapi: '3.0.3',
+            }),
+        );
+    });
+
     test('selects AWS adapters or in-memory adapters according to the environment', () => {
         process.env.IS_OFFLINE = 'true';
         expect(createAppointmentRepository()).toBeInstanceOf(InMemoryAppointmentRepository);

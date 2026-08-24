@@ -25,6 +25,10 @@ custom:
 plugins:
     - serverless-offline
 
+package:
+    patterns:
+        - docs/openapi.yaml
+
 functions:
     appointment:
         name: ${self:custom.appointmentFunctionName}
@@ -43,6 +47,12 @@ functions:
                   method: post
             - httpApi:
                   path: /appointments/{insuredId}
+                  method: get
+            - httpApi:
+                  path: /docs
+                  method: get
+            - httpApi:
+                  path: /openapi.json
                   method: get
             - sqs:
                   arn:

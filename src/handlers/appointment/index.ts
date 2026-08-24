@@ -27,6 +27,7 @@ import {
     type CompleteAppointmentSqsHandler,
 } from './complete';
 import { handleCreateAppointment } from './create';
+import { handleOpenApiDocument, handleSwaggerDocs } from './docs';
 import { handleGetAppointmentsByInsured } from './getByInsured';
 
 type AppointmentHttpHandler = (
@@ -46,6 +47,10 @@ export function createAppointmentHttpHandler(
                 return handleCreateAppointment(event, createAppointment);
             case 'GET /appointments/{insuredId}':
                 return handleGetAppointmentsByInsured(event, getAppointmentsByInsured);
+            case 'GET /docs':
+                return handleSwaggerDocs();
+            case 'GET /openapi.json':
+                return handleOpenApiDocument();
             default:
                 return jsonResponse(404, { message: 'Route not found' });
         }
