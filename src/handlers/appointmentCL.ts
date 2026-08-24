@@ -7,7 +7,7 @@ import { configureCountryAppointmentHandler } from './country/configureCountryAp
 let configuredHandler: CountryAppointmentSqsHandler | undefined;
 
 export async function handler(event: SQSEvent): Promise<SQSBatchResponse> {
-    configuredHandler ??= configureCountryAppointmentHandler(CountryISO.PE);
+    configuredHandler ??= configureCountryAppointmentHandler(CountryISO.CL);
 
     return configuredHandler(event);
 }

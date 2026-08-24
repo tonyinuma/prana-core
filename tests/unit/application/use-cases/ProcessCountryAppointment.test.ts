@@ -71,4 +71,33 @@ describe('ProcessCountryAppointment', () => {
         expect(appointmentRepository.getAll()).toEqual([]);
         expect(completionEventPublisher.getPublishedEvents()).toEqual([]);
     });
+
+    test('processes a Chile appointment when configured for Chile', async () => {
+        processCountryAppointment = new ProcessCountryAppointment(
+            appointmentRepository,
+            completionEventPublisher,
+            CountryISO.CL,
+        );
+
+        await processCountryAppointment.execute({
+            appointmentId: 'appointment-cl-1',
+            insuredId: '00124',
+            scheduleId: 200,
+            countryISO: CountryISO.CL,
+        });
+
+        expect(appointmentRepository.getAll()).toEqual([
+            expect.objectContaining({
+                appointmentId: 'appointment-cl-1',
+                countryISO: CountryISO.CL,
+            }),
+        ]);
+        expect(completionEventPublisher.getPublishedEvents()).toEqual([
+            {
+                appointmentId: 'appointment-cl-1',
+                insuredId: '00124',
+                countryISO: CountryISO.CL,
+            },
+        ]);
+    });
 });
