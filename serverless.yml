@@ -11,6 +11,8 @@ provider:
     stackName: ${self:service}-${sls:stage}
     environment:
         APPOINTMENTS_TABLE_NAME: ${self:custom.appointmentsTableName}
+        APPOINTMENT_TOPIC_ARN:
+            Ref: AppointmentTopic
     iam:
         role:
             statements:
@@ -22,9 +24,15 @@ provider:
                       - Fn::GetAtt:
                             - AppointmentsTable
                             - Arn
+                - Effect: Allow
+                  Action:
+                      - sns:Publish
+                  Resource:
+                      - Ref: AppointmentTopic
 
 custom:
     appointmentsTableName: ${self:service}-${sls:stage}-appointments
+    appointmentTopicName: ${self:service}-${sls:stage}-appointment-topic
 
 plugins:
     - serverless-offline
@@ -57,3 +65,7 @@ resources:
                       KeyType: HASH
                     - AttributeName: appointmentId
                       KeyType: RANGE
+        AppointmentTopic:
+            Type: AWS::SNS::Topic
+            Properties:
+                TopicName: ${self:custom.appointmentTopicName}

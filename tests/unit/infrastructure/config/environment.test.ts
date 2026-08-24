@@ -1,14 +1,15 @@
-import { getAppointmentsTableName } from '../../../../src/infrastructure/config/environment';
+import {
+    getAppointmentsTableName,
+    getAppointmentTopicArn,
+} from '../../../../src/infrastructure/config/environment';
 
-describe('getAppointmentsTableName', () => {
+describe('AWS resource environment configuration', () => {
     const originalTableName = process.env.APPOINTMENTS_TABLE_NAME;
+    const originalTopicArn = process.env.APPOINTMENT_TOPIC_ARN;
 
     afterEach(() => {
-        if (originalTableName === undefined) {
-            delete process.env.APPOINTMENTS_TABLE_NAME;
-        } else {
-            process.env.APPOINTMENTS_TABLE_NAME = originalTableName;
-        }
+        restoreEnvironmentVariable('APPOINTMENTS_TABLE_NAME', originalTableName);
+        restoreEnvironmentVariable('APPOINTMENT_TOPIC_ARN', originalTopicArn);
     });
 
     test('returns the configured table name', () => {
@@ -28,4 +29,33 @@ describe('getAppointmentsTableName', () => {
             'APPOINTMENTS_TABLE_NAME environment variable is required',
         );
     });
+
+    test('returns the configured topic ARN', () => {
+        process.env.APPOINTMENT_TOPIC_ARN =
+            'arn:aws:sns:us-east-1:123456789012:prana-core-test-appointment-topic';
+
+        expect(getAppointmentTopicArn()).toBe(
+            'arn:aws:sns:us-east-1:123456789012:prana-core-test-appointment-topic',
+        );
+    });
+
+    test.each([undefined, ''])('rejects a missing topic ARN: %p', (topicArn) => {
+        if (topicArn === undefined) {
+            delete process.env.APPOINTMENT_TOPIC_ARN;
+        } else {
+            process.env.APPOINTMENT_TOPIC_ARN = topicArn;
+        }
+
+        expect(() => getAppointmentTopicArn()).toThrow(
+            'APPOINTMENT_TOPIC_ARN environment variable is required',
+        );
+    });
 });
+
+function restoreEnvironmentVariable(name: string, value: string | undefined): void {
+    if (value === undefined) {
+        delete process.env[name];
+    } else {
+        process.env[name] = value;
+    }
+}

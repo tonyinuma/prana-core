@@ -1,9 +1,17 @@
 export function getAppointmentsTableName(): string {
-    const tableName = process.env.APPOINTMENTS_TABLE_NAME;
+    return getRequiredEnvironmentVariable('APPOINTMENTS_TABLE_NAME');
+}
 
-    if (tableName === undefined || tableName.length === 0) {
-        throw new Error('APPOINTMENTS_TABLE_NAME environment variable is required');
+export function getAppointmentTopicArn(): string {
+    return getRequiredEnvironmentVariable('APPOINTMENT_TOPIC_ARN');
+}
+
+function getRequiredEnvironmentVariable(name: string): string {
+    const value = process.env[name];
+
+    if (value === undefined || value.length === 0) {
+        throw new Error(`${name} environment variable is required`);
     }
 
-    return tableName;
+    return value;
 }

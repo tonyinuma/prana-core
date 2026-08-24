@@ -68,6 +68,15 @@ describe('CreateAppointment', () => {
         ]);
     });
 
+    test('persists the appointment before publishing it', async () => {
+        const save = jest.spyOn(appointmentRepository, 'save');
+        const publish = jest.spyOn(appointmentPublisher, 'publish');
+
+        await createAppointment.execute(validInput);
+
+        expect(save.mock.invocationCallOrder[0]).toBeLessThan(publish.mock.invocationCallOrder[0]);
+    });
+
     test.each([
         { field: 'insuredId', input: { ...validInput, insuredId: '1234' } },
         { field: 'scheduleId', input: { ...validInput, scheduleId: 0 } },
