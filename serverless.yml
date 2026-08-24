@@ -49,6 +49,24 @@ functions:
             - httpApi:
                   path: /appointments/{insuredId}
                   method: get
+    appointmentPe:
+        name: ${self:service}-${sls:stage}-appointment-pe
+        handler: src/handlers/appointmentPE.handler
+        timeout: 10
+        environment:
+            MYSQL_HOST: ${env:MYSQL_HOST}
+            MYSQL_PORT: ${env:MYSQL_PORT}
+            MYSQL_USER: ${env:MYSQL_USER}
+            MYSQL_PASSWORD: ${env:MYSQL_PASSWORD}
+            MYSQL_DATABASE_PE: ${env:MYSQL_DATABASE_PE}
+        events:
+            - sqs:
+                  arn:
+                      Fn::GetAtt:
+                          - AppointmentPeQueue
+                          - Arn
+                  batchSize: 10
+                  functionResponseType: ReportBatchItemFailures
 
 resources:
     Resources:
@@ -75,6 +93,7 @@ resources:
             Type: AWS::SQS::Queue
             Properties:
                 QueueName: ${self:custom.appointmentPeQueueName}
+                VisibilityTimeout: 60
         AppointmentClQueue:
             Type: AWS::SQS::Queue
             Properties:
