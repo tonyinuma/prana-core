@@ -42,7 +42,9 @@ custom:
     appointmentTopicName: ${self:service}-${sls:stage}-appointment-topic
     appointmentPeQueueName: ${self:service}-${sls:stage}-appointments-pe
     appointmentClQueueName: ${self:service}-${sls:stage}-appointments-cl
+    appointmentCompletedQueueName: ${self:service}-${sls:stage}-appointments-completed
     appointmentEventBusName: prana-appointment-events
+    appointmentCompletedRuleName: ${self:service}-${sls:stage}-appointment-completed
 
 plugins:
     - serverless-offline
@@ -137,6 +139,11 @@ resources:
             Properties:
                 QueueName: ${self:custom.appointmentClQueueName}
                 VisibilityTimeout: 60
+        AppointmentCompletedQueue:
+            Type: AWS::SQS::Queue
+            Properties:
+                QueueName: ${self:custom.appointmentCompletedQueueName}
+                VisibilityTimeout: 60
         AppointmentPeQueuePolicy:
             Type: AWS::SQS::QueuePolicy
             Properties:
@@ -181,6 +188,30 @@ resources:
                               ArnEquals:
                                   aws:SourceArn:
                                       Ref: AppointmentTopic
+        AppointmentCompletedQueuePolicy:
+            Type: AWS::SQS::QueuePolicy
+            Properties:
+                Queues:
+                    - Ref: AppointmentCompletedQueue
+                PolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                        - Sid: AllowAppointmentCompletedRuleToSendMessages
+                          Effect: Allow
+                          Principal:
+                              Service: events.amazonaws.com
+                          Action:
+                              - sqs:SendMessage
+                          Resource:
+                              - Fn::GetAtt:
+                                    - AppointmentCompletedQueue
+                                    - Arn
+                          Condition:
+                              ArnEquals:
+                                  aws:SourceArn:
+                                      Fn::GetAtt:
+                                          - AppointmentCompletedRule
+                                          - Arn
         AppointmentPeSubscription:
             Type: AWS::SNS::Subscription
             Properties:
@@ -211,3 +242,21 @@ resources:
                 FilterPolicy:
                     countryISO:
                         - CL
+        AppointmentCompletedRule:
+            Type: AWS::Events::Rule
+            Properties:
+                Name: ${self:custom.appointmentCompletedRuleName}
+                EventBusName:
+                    Ref: AppointmentEventBus
+                State: ENABLED
+                EventPattern:
+                    source:
+                        - prana.appointments
+                    detail-type:
+                        - AppointmentCompleted
+                Targets:
+                    - Id: AppointmentCompletedQueueTarget
+                      Arn:
+                          Fn::GetAtt:
+                              - AppointmentCompletedQueue
+                              - Arn
