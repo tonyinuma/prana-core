@@ -16,4 +16,15 @@ Backend serverless para el agendamiento de citas medicas de asegurados en Peru y
 - Inyeccion de dependencias: manual.
 - Desarrollo local: Serverless Offline, repositorios in-memory y MySQL en Docker; sin LocalStack.
 
-Los recursos y la logica de negocio se incorporaran en los pasos posteriores del plan del proyecto.
+## MySQL local
+
+MySQL se ejecuta como dependencia externa mediante Docker Compose. Para preparar el entorno:
+
+```bash
+cp -n .env.example .env
+docker compose up -d
+npm run db:check
+```
+
+El script de inicializacion crea las bases `prana_pe` y `prana_cl`, cada una con su tabla
+`appointments`.

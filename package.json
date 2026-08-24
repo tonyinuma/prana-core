@@ -12,6 +12,7 @@
     "packageManager": "npm@11.9.0",
     "scripts": {
         "dev": "serverless offline --stage dev",
+        "db:check": "node --env-file=.env --require ts-node/register scripts/checkMySqlConnection.ts",
         "build": "tsc",
         "test": "jest --passWithNoTests",
         "test:coverage": "jest --coverage --passWithNoTests",
@@ -50,6 +51,7 @@
     "dependencies": {
         "@aws-sdk/client-dynamodb": "^3.1116.0",
         "@aws-sdk/client-sns": "^3.1116.0",
-        "@aws-sdk/lib-dynamodb": "^3.1116.0"
+        "@aws-sdk/lib-dynamodb": "^3.1116.0",
+        "mysql2": "^3.24.0"
     }
 }
