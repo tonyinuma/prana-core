@@ -9,36 +9,11 @@ provider:
     region: ${opt:region, env:AWS_REGION, 'us-east-1'}
     stage: ${opt:stage, env:STAGE, 'dev'}
     stackName: ${self:service}-${sls:stage}
-    environment:
-        APPOINTMENTS_TABLE_NAME: ${self:custom.appointmentsTableName}
-        APPOINTMENT_TOPIC_ARN:
-            Ref: AppointmentTopic
-    iam:
-        role:
-            statements:
-                - Effect: Allow
-                  Action:
-                      - dynamodb:PutItem
-                      - dynamodb:Query
-                      - dynamodb:UpdateItem
-                  Resource:
-                      - Fn::GetAtt:
-                            - AppointmentsTable
-                            - Arn
-                - Effect: Allow
-                  Action:
-                      - sns:Publish
-                  Resource:
-                      - Ref: AppointmentTopic
-                - Effect: Allow
-                  Action:
-                      - events:PutEvents
-                  Resource:
-                      - Fn::GetAtt:
-                            - AppointmentEventBus
-                            - Arn
 
 custom:
+    appointmentFunctionName: ${self:service}-${sls:stage}-appointment
+    appointmentPeFunctionName: ${self:service}-${sls:stage}-appointment-pe
+    appointmentClFunctionName: ${self:service}-${sls:stage}-appointment-cl
     appointmentsTableName: ${self:service}-${sls:stage}-appointments
     appointmentTopicName: ${self:service}-${sls:stage}-appointment-topic
     appointmentPeQueueName: ${self:service}-${sls:stage}-appointments-pe
@@ -52,7 +27,16 @@ plugins:
 
 functions:
     appointment:
+        name: ${self:custom.appointmentFunctionName}
         handler: src/handlers/appointment/index.handler
+        role:
+            Fn::GetAtt:
+                - AppointmentLambdaRole
+                - Arn
+        environment:
+            APPOINTMENTS_TABLE_NAME: ${self:custom.appointmentsTableName}
+            APPOINTMENT_TOPIC_ARN:
+                Ref: AppointmentTopic
         events:
             - httpApi:
                   path: /appointments
@@ -68,8 +52,12 @@ functions:
                   batchSize: 10
                   functionResponseType: ReportBatchItemFailures
     appointmentPe:
-        name: ${self:service}-${sls:stage}-appointment-pe
+        name: ${self:custom.appointmentPeFunctionName}
         handler: src/handlers/appointmentPE.handler
+        role:
+            Fn::GetAtt:
+                - AppointmentPeLambdaRole
+                - Arn
         timeout: 10
         environment:
             MYSQL_HOST: ${env:MYSQL_HOST}
@@ -90,8 +78,12 @@ functions:
                   batchSize: 10
                   functionResponseType: ReportBatchItemFailures
     appointmentCl:
-        name: ${self:service}-${sls:stage}-appointment-cl
+        name: ${self:custom.appointmentClFunctionName}
         handler: src/handlers/appointmentCL.handler
+        role:
+            Fn::GetAtt:
+                - AppointmentClLambdaRole
+                - Arn
         timeout: 10
         environment:
             MYSQL_HOST: ${env:MYSQL_HOST}
@@ -114,6 +106,155 @@ functions:
 
 resources:
     Resources:
+        AppointmentLogGroup:
+            Type: AWS::Logs::LogGroup
+            Properties:
+                LogGroupName: /aws/lambda/${self:custom.appointmentFunctionName}
+        AppointmentPeLogGroup:
+            Type: AWS::Logs::LogGroup
+            Properties:
+                LogGroupName: /aws/lambda/${self:custom.appointmentPeFunctionName}
+        AppointmentClLogGroup:
+            Type: AWS::Logs::LogGroup
+            Properties:
+                LogGroupName: /aws/lambda/${self:custom.appointmentClFunctionName}
+        AppointmentLambdaRole:
+            Type: AWS::IAM::Role
+            Properties:
+                AssumeRolePolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                        - Effect: Allow
+                          Principal:
+                              Service: lambda.amazonaws.com
+                          Action:
+                              - sts:AssumeRole
+                Policies:
+                    - PolicyName: appointment-runtime-access
+                      PolicyDocument:
+                          Version: '2012-10-17'
+                          Statement:
+                              - Sid: WriteAppointmentLogs
+                                Effect: Allow
+                                Action:
+                                    - logs:CreateLogStream
+                                    - logs:PutLogEvents
+                                Resource:
+                                    - Fn::GetAtt:
+                                          - AppointmentLogGroup
+                                          - Arn
+                              - Sid: ManageAppointmentsTable
+                                Effect: Allow
+                                Action:
+                                    - dynamodb:PutItem
+                                    - dynamodb:Query
+                                    - dynamodb:UpdateItem
+                                Resource:
+                                    - Fn::GetAtt:
+                                          - AppointmentsTable
+                                          - Arn
+                              - Sid: PublishAppointmentRequests
+                                Effect: Allow
+                                Action:
+                                    - sns:Publish
+                                Resource:
+                                    - Ref: AppointmentTopic
+                              - Sid: ConsumeAppointmentCompletions
+                                Effect: Allow
+                                Action:
+                                    - sqs:ReceiveMessage
+                                    - sqs:DeleteMessage
+                                    - sqs:GetQueueAttributes
+                                Resource:
+                                    - Fn::GetAtt:
+                                          - AppointmentCompletedQueue
+                                          - Arn
+        AppointmentPeLambdaRole:
+            Type: AWS::IAM::Role
+            Properties:
+                AssumeRolePolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                        - Effect: Allow
+                          Principal:
+                              Service: lambda.amazonaws.com
+                          Action:
+                              - sts:AssumeRole
+                Policies:
+                    - PolicyName: appointment-pe-runtime-access
+                      PolicyDocument:
+                          Version: '2012-10-17'
+                          Statement:
+                              - Sid: WriteAppointmentPeLogs
+                                Effect: Allow
+                                Action:
+                                    - logs:CreateLogStream
+                                    - logs:PutLogEvents
+                                Resource:
+                                    - Fn::GetAtt:
+                                          - AppointmentPeLogGroup
+                                          - Arn
+                              - Sid: ConsumePeruAppointments
+                                Effect: Allow
+                                Action:
+                                    - sqs:ReceiveMessage
+                                    - sqs:DeleteMessage
+                                    - sqs:GetQueueAttributes
+                                Resource:
+                                    - Fn::GetAtt:
+                                          - AppointmentPeQueue
+                                          - Arn
+                              - Sid: PublishPeruCompletions
+                                Effect: Allow
+                                Action:
+                                    - events:PutEvents
+                                Resource:
+                                    - Fn::GetAtt:
+                                          - AppointmentEventBus
+                                          - Arn
+        AppointmentClLambdaRole:
+            Type: AWS::IAM::Role
+            Properties:
+                AssumeRolePolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                        - Effect: Allow
+                          Principal:
+                              Service: lambda.amazonaws.com
+                          Action:
+                              - sts:AssumeRole
+                Policies:
+                    - PolicyName: appointment-cl-runtime-access
+                      PolicyDocument:
+                          Version: '2012-10-17'
+                          Statement:
+                              - Sid: WriteAppointmentClLogs
+                                Effect: Allow
+                                Action:
+                                    - logs:CreateLogStream
+                                    - logs:PutLogEvents
+                                Resource:
+                                    - Fn::GetAtt:
+                                          - AppointmentClLogGroup
+                                          - Arn
+                              - Sid: ConsumeChileAppointments
+                                Effect: Allow
+                                Action:
+                                    - sqs:ReceiveMessage
+                                    - sqs:DeleteMessage
+                                    - sqs:GetQueueAttributes
+                                Resource:
+                                    - Fn::GetAtt:
+                                          - AppointmentClQueue
+                                          - Arn
+                              - Sid: PublishChileCompletions
+                                Effect: Allow
+                                Action:
+                                    - events:PutEvents
+                                Resource:
+                                    - Fn::GetAtt:
+                                          - AppointmentEventBus
+                                          - Arn
         AppointmentsTable:
             Type: AWS::DynamoDB::Table
             Properties:
