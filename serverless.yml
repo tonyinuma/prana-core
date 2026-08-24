@@ -13,4 +13,13 @@ provider:
 plugins:
     - serverless-offline
 
-functions: {}
+functions:
+    appointment:
+        handler: src/handlers/appointment/index.handler
+        events:
+            - httpApi:
+                  path: /appointments
+                  method: post
+            - httpApi:
+                  path: /appointments/{insuredId}
+                  method: get

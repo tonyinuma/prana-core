@@ -31,6 +31,7 @@
     "homepage": "https://github.com/tonyinuma/prana-core#readme",
     "devDependencies": {
         "@eslint/js": "^10.0.1",
+        "@types/aws-lambda": "^8.10.162",
         "@types/jest": "^30.0.0",
         "@types/node": "^24.13.3",
         "eslint": "^10.9.0",
