@@ -106,10 +106,19 @@ describe('handleCreateAppointment', () => {
 
         expect(response.statusCode).toBe(500);
         expect(JSON.parse(response.body ?? '')).toEqual({ message: 'Internal server error' });
-        expect(consoleError).toHaveBeenCalledWith(
-            'Unexpected error while processing HTTP request',
-            unexpectedError,
-        );
+        expect(consoleError).toHaveBeenCalledTimes(1);
+
+        const loggedEntry = JSON.parse(consoleError.mock.calls[0][0] as string) as Record<
+            string,
+            unknown
+        >;
+
+        expect(loggedEntry).toMatchObject({
+            level: 'ERROR',
+            event: 'appointment.http.request.failed',
+            errorType: 'Error',
+        });
+        expect(consoleError.mock.calls[0][0]).not.toContain(unexpectedError.message);
     });
 });
 

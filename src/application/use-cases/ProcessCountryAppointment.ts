@@ -2,6 +2,7 @@ import { Appointment } from '../../domain/entities/Appointment';
 import { CountryISO } from '../../domain/enums/CountryISO';
 import { DomainError } from '../../domain/errors/DomainError';
 import type { CountryAppointmentRepository } from '../../domain/repositories/CountryAppointmentRepository';
+import { logger as defaultLogger, type Logger } from '../../shared/logger/logger';
 import type { CompletionEventPublisher } from '../ports/CompletionEventPublisher';
 
 export interface ProcessCountryAppointmentInput {
@@ -16,6 +17,7 @@ export class ProcessCountryAppointment {
         private readonly appointmentRepository: CountryAppointmentRepository,
         private readonly completionEventPublisher: CompletionEventPublisher,
         private readonly expectedCountryISO: CountryISO,
+        private readonly logger: Logger = defaultLogger,
     ) {}
 
     async execute(input: ProcessCountryAppointmentInput): Promise<void> {
@@ -24,12 +26,22 @@ export class ProcessCountryAppointment {
         }
 
         const appointment = new Appointment(input);
+        const logContext = {
+            appointmentId: appointment.appointmentId,
+            insuredId: appointment.insuredId,
+            countryISO: appointment.countryISO,
+        };
+
+        this.logger.info('appointment.country.processing', logContext);
 
         await this.appointmentRepository.save(appointment);
+        this.logger.info('appointment.country.persisted', logContext);
+
         await this.completionEventPublisher.publish({
             appointmentId: appointment.appointmentId,
             insuredId: appointment.insuredId,
             countryISO: appointment.countryISO,
         });
+        this.logger.info('appointment.completed.published', logContext);
     }
 }

@@ -2,15 +2,19 @@ import { CompleteAppointment } from '../../../../src/application/use-cases/Compl
 import { Appointment } from '../../../../src/domain/entities/Appointment';
 import { AppointmentStatus } from '../../../../src/domain/enums/AppointmentStatus';
 import { CountryISO } from '../../../../src/domain/enums/CountryISO';
+import type { Logger } from '../../../../src/shared/logger/logger';
+import { createMockLogger } from '../../../doubles/logger/createMockLogger';
 import { InMemoryAppointmentRepository } from '../../../doubles/repositories/InMemoryAppointmentRepository';
 
 describe('CompleteAppointment', () => {
     let appointmentRepository: InMemoryAppointmentRepository;
+    let logger: jest.Mocked<Logger>;
     let completeAppointment: CompleteAppointment;
 
     beforeEach(() => {
         appointmentRepository = new InMemoryAppointmentRepository();
-        completeAppointment = new CompleteAppointment(appointmentRepository);
+        logger = createMockLogger();
+        completeAppointment = new CompleteAppointment(appointmentRepository, logger);
     });
 
     test('marks an existing appointment as completed using the event time', async () => {
@@ -40,6 +44,12 @@ describe('CompleteAppointment', () => {
                 updatedAt: completedAt,
             }),
         ]);
+        expect(logger.info).toHaveBeenCalledTimes(2);
+        expect(logger.info).toHaveBeenLastCalledWith('appointment.completed', {
+            appointmentId: 'appointment-1',
+            insuredId: '00123',
+            status: AppointmentStatus.Completed,
+        });
     });
 
     test.each([

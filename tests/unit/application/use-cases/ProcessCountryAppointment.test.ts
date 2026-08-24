@@ -1,21 +1,26 @@
 import { ProcessCountryAppointment } from '../../../../src/application/use-cases/ProcessCountryAppointment';
 import { CountryISO } from '../../../../src/domain/enums/CountryISO';
 import { DomainError } from '../../../../src/domain/errors/DomainError';
+import type { Logger } from '../../../../src/shared/logger/logger';
+import { createMockLogger } from '../../../doubles/logger/createMockLogger';
 import { MockCompletionEventPublisher } from '../../../doubles/publishers/MockCompletionEventPublisher';
 import { InMemoryCountryAppointmentRepository } from '../../../doubles/repositories/InMemoryCountryAppointmentRepository';
 
 describe('ProcessCountryAppointment', () => {
     let appointmentRepository: InMemoryCountryAppointmentRepository;
     let completionEventPublisher: MockCompletionEventPublisher;
+    let logger: jest.Mocked<Logger>;
     let processCountryAppointment: ProcessCountryAppointment;
 
     beforeEach(() => {
         appointmentRepository = new InMemoryCountryAppointmentRepository();
         completionEventPublisher = new MockCompletionEventPublisher();
+        logger = createMockLogger();
         processCountryAppointment = new ProcessCountryAppointment(
             appointmentRepository,
             completionEventPublisher,
             CountryISO.PE,
+            logger,
         );
     });
 
@@ -41,6 +46,32 @@ describe('ProcessCountryAppointment', () => {
                 insuredId: '00123',
                 countryISO: CountryISO.PE,
             },
+        ]);
+        expect(logger.info.mock.calls).toEqual([
+            [
+                'appointment.country.processing',
+                {
+                    appointmentId: 'appointment-1',
+                    insuredId: '00123',
+                    countryISO: CountryISO.PE,
+                },
+            ],
+            [
+                'appointment.country.persisted',
+                {
+                    appointmentId: 'appointment-1',
+                    insuredId: '00123',
+                    countryISO: CountryISO.PE,
+                },
+            ],
+            [
+                'appointment.completed.published',
+                {
+                    appointmentId: 'appointment-1',
+                    insuredId: '00123',
+                    countryISO: CountryISO.PE,
+                },
+            ],
         ]);
     });
 
@@ -77,6 +108,7 @@ describe('ProcessCountryAppointment', () => {
             appointmentRepository,
             completionEventPublisher,
             CountryISO.CL,
+            logger,
         );
 
         await processCountryAppointment.execute({

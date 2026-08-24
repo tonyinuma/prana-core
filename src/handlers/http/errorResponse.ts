@@ -1,6 +1,7 @@
 import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
 import { DomainError } from '../../domain/errors/DomainError';
+import { logger } from '../../shared/logger/logger';
 import { jsonResponse } from './response';
 
 export function errorResponse(error: unknown): APIGatewayProxyStructuredResultV2 {
@@ -8,7 +9,7 @@ export function errorResponse(error: unknown): APIGatewayProxyStructuredResultV2
         return jsonResponse(400, { message: error.message });
     }
 
-    console.error('Unexpected error while processing HTTP request', error);
+    logger.error('appointment.http.request.failed', error);
 
     return jsonResponse(500, { message: 'Internal server error' });
 }

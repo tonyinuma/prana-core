@@ -2,6 +2,8 @@ import { CreateAppointment } from '../../../../src/application/use-cases/CreateA
 import { AppointmentStatus } from '../../../../src/domain/enums/AppointmentStatus';
 import { CountryISO } from '../../../../src/domain/enums/CountryISO';
 import { DomainError } from '../../../../src/domain/errors/DomainError';
+import type { Logger } from '../../../../src/shared/logger/logger';
+import { createMockLogger } from '../../../doubles/logger/createMockLogger';
 import { MockAppointmentPublisher } from '../../../doubles/publishers/MockAppointmentPublisher';
 import { InMemoryAppointmentRepository } from '../../../doubles/repositories/InMemoryAppointmentRepository';
 
@@ -16,16 +18,19 @@ describe('CreateAppointment', () => {
     let appointmentRepository: InMemoryAppointmentRepository;
     let appointmentPublisher: MockAppointmentPublisher;
     let generateAppointmentId: jest.Mock<string>;
+    let logger: jest.Mocked<Logger>;
     let createAppointment: CreateAppointment;
 
     beforeEach(() => {
         appointmentRepository = new InMemoryAppointmentRepository();
         appointmentPublisher = new MockAppointmentPublisher();
         generateAppointmentId = jest.fn(() => appointmentId);
+        logger = createMockLogger();
         createAppointment = new CreateAppointment(
             appointmentRepository,
             appointmentPublisher,
             generateAppointmentId,
+            logger,
         );
     });
 
@@ -75,6 +80,23 @@ describe('CreateAppointment', () => {
         await createAppointment.execute(validInput);
 
         expect(save.mock.invocationCallOrder[0]).toBeLessThan(publish.mock.invocationCallOrder[0]);
+    });
+
+    test('logs the main events with the appointment correlation data', async () => {
+        await createAppointment.execute(validInput);
+
+        const context = {
+            appointmentId,
+            insuredId: validInput.insuredId,
+            countryISO: validInput.countryISO,
+            status: AppointmentStatus.Pending,
+        };
+
+        expect(logger.info.mock.calls).toEqual([
+            ['appointment.received', context],
+            ['appointment.created', context],
+            ['appointment.published', context],
+        ]);
     });
 
     test.each([

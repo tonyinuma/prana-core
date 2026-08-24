@@ -2,12 +2,13 @@ import type { SQSEvent, SQSRecord } from 'aws-lambda';
 
 import { CountryISO } from '../../../../src/domain/enums/CountryISO';
 import { createCountryAppointmentSqsHandler } from '../../../../src/handlers/country/createCountryAppointmentSqsHandler';
+import { createMockLogger } from '../../../doubles/logger/createMockLogger';
 
 describe('createCountryAppointmentSqsHandler', () => {
     test('processes valid records and reports only failed message identifiers', async () => {
         const execute = jest.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce('failure');
-        const handler = createCountryAppointmentSqsHandler({ execute });
-        const consoleError = jest.spyOn(console, 'error').mockImplementation();
+        const logger = createMockLogger();
+        const handler = createCountryAppointmentSqsHandler({ execute }, logger);
         const validBody = createSnsRecordBody({
             appointmentId: 'appointment-1',
             insuredId: '00123',
@@ -28,7 +29,24 @@ describe('createCountryAppointmentSqsHandler', () => {
         expect(response).toEqual({
             batchItemFailures: [{ itemIdentifier: 'message-2' }, { itemIdentifier: 'message-3' }],
         });
-        expect(consoleError).toHaveBeenCalledTimes(2);
+        expect(logger.error).toHaveBeenCalledTimes(2);
+        expect(logger.error).toHaveBeenNthCalledWith(
+            1,
+            'appointment.country.processing.failed',
+            expect.any(Error),
+            { messageId: 'message-2' },
+        );
+        expect(logger.error).toHaveBeenNthCalledWith(
+            2,
+            'appointment.country.processing.failed',
+            'failure',
+            {
+                messageId: 'message-3',
+                appointmentId: 'appointment-1',
+                insuredId: '00123',
+                countryISO: CountryISO.PE,
+            },
+        );
     });
 });
 

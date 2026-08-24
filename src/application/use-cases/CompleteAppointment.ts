@@ -2,6 +2,7 @@ import { AppointmentStatus } from '../../domain/enums/AppointmentStatus';
 import { DomainError } from '../../domain/errors/DomainError';
 import type { AppointmentRepository } from '../../domain/repositories/AppointmentRepository';
 import { validateInsuredId } from '../../domain/validators/validateInsuredId';
+import { logger as defaultLogger, type Logger } from '../../shared/logger/logger';
 
 export interface CompleteAppointmentInput {
     insuredId: string;
@@ -10,7 +11,10 @@ export interface CompleteAppointmentInput {
 }
 
 export class CompleteAppointment {
-    constructor(private readonly appointmentRepository: AppointmentRepository) {}
+    constructor(
+        private readonly appointmentRepository: AppointmentRepository,
+        private readonly logger: Logger = defaultLogger,
+    ) {}
 
     async execute(input: CompleteAppointmentInput): Promise<void> {
         validateInsuredId(input.insuredId);
@@ -22,6 +26,12 @@ export class CompleteAppointment {
             appointmentId: input.appointmentId,
             status: AppointmentStatus.Completed,
             updatedAt: input.completedAt,
+        });
+
+        this.logger.info('appointment.completed', {
+            appointmentId: input.appointmentId,
+            insuredId: input.insuredId,
+            status: AppointmentStatus.Completed,
         });
     }
 
