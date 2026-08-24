@@ -8,6 +8,9 @@ export interface AppointmentProps {
     insuredId: string;
     scheduleId: number;
     countryISO: CountryISO;
+    status?: AppointmentStatus;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export class Appointment {
@@ -25,14 +28,15 @@ export class Appointment {
         Appointment.validateCountryISO(props.countryISO);
 
         const now = new Date();
+        const createdAt = props.createdAt ?? now;
 
         this.appointmentId = props.appointmentId;
         this.insuredId = props.insuredId;
         this.scheduleId = props.scheduleId;
         this.countryISO = props.countryISO;
-        this.status = AppointmentStatus.Pending;
-        this.createdAt = now;
-        this.updatedAt = now;
+        this.status = props.status ?? AppointmentStatus.Pending;
+        this.createdAt = createdAt;
+        this.updatedAt = props.updatedAt ?? createdAt;
     }
 
     private static validateScheduleId(scheduleId: number): void {

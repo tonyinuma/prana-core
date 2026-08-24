@@ -9,6 +9,11 @@ provider:
     region: ${opt:region, env:AWS_REGION, 'us-east-1'}
     stage: ${opt:stage, env:STAGE, 'dev'}
     stackName: ${self:service}-${sls:stage}
+    environment:
+        APPOINTMENTS_TABLE_NAME: ${self:custom.appointmentsTableName}
+
+custom:
+    appointmentsTableName: ${self:service}-${sls:stage}-appointments
 
 plugins:
     - serverless-offline
@@ -23,3 +28,21 @@ functions:
             - httpApi:
                   path: /appointments/{insuredId}
                   method: get
+
+resources:
+    Resources:
+        AppointmentsTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:custom.appointmentsTableName}
+                BillingMode: PAY_PER_REQUEST
+                AttributeDefinitions:
+                    - AttributeName: insuredId
+                      AttributeType: S
+                    - AttributeName: appointmentId
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: insuredId
+                      KeyType: HASH
+                    - AttributeName: appointmentId
+                      KeyType: RANGE

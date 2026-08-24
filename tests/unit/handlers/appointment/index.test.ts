@@ -1,9 +1,23 @@
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 import { CountryISO } from '../../../../src/domain/enums/CountryISO';
-import { handler } from '../../../../src/handlers/appointment';
+import { createAppointmentRepository, handler } from '../../../../src/handlers/appointment';
+import { DynamoAppointmentRepository } from '../../../../src/infrastructure/dynamodb/DynamoAppointmentRepository';
+import { InMemoryAppointmentRepository } from '../../../../src/infrastructure/memory/InMemoryAppointmentRepository';
 
 describe('appointment HTTP handler', () => {
+    const originalIsOffline = process.env.IS_OFFLINE;
+    const originalTableName = process.env.APPOINTMENTS_TABLE_NAME;
+
+    beforeAll(() => {
+        process.env.IS_OFFLINE = 'true';
+    });
+
+    afterAll(() => {
+        restoreEnvironmentVariable('IS_OFFLINE', originalIsOffline);
+        restoreEnvironmentVariable('APPOINTMENTS_TABLE_NAME', originalTableName);
+    });
+
     test('routes POST and GET through the configured local dependencies', async () => {
         const firstCreateResponse = await handler(
             httpEvent('POST /appointments', {
@@ -47,6 +61,15 @@ describe('appointment HTTP handler', () => {
         expect(response.statusCode).toBe(404);
         expect(JSON.parse(response.body ?? '')).toEqual({ message: 'Route not found' });
     });
+
+    test('selects the repository according to the execution environment', () => {
+        process.env.IS_OFFLINE = 'true';
+        expect(createAppointmentRepository()).toBeInstanceOf(InMemoryAppointmentRepository);
+
+        delete process.env.IS_OFFLINE;
+        process.env.APPOINTMENTS_TABLE_NAME = 'prana-core-test-appointments';
+        expect(createAppointmentRepository()).toBeInstanceOf(DynamoAppointmentRepository);
+    });
 });
 
 function httpEvent(
@@ -57,4 +80,12 @@ function httpEvent(
         routeKey,
         ...overrides,
     } as APIGatewayProxyEventV2;
+}
+
+function restoreEnvironmentVariable(name: string, value: string | undefined): void {
+    if (value === undefined) {
+        delete process.env[name];
+    } else {
+        process.env[name] = value;
+    }
 }
