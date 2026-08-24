@@ -28,6 +28,7 @@ plugins:
 package:
     patterns:
         - docs/openapi.yaml
+        - certificates/**
 
 functions:
     appointment:
@@ -75,6 +76,8 @@ functions:
             MYSQL_USER: ${env:MYSQL_USER}
             MYSQL_PASSWORD: ${env:MYSQL_PASSWORD}
             MYSQL_DATABASE_PE: ${env:MYSQL_DATABASE_PE}
+            MYSQL_TLS_ENABLED: ${env:MYSQL_TLS_ENABLED, 'false'}
+            MYSQL_TLS_CA_FILE: ${env:MYSQL_TLS_CA_FILE, ''}
             APPOINTMENT_EVENT_BUS_ARN:
                 Fn::GetAtt:
                     - AppointmentEventBus
@@ -101,6 +104,8 @@ functions:
             MYSQL_USER: ${env:MYSQL_USER}
             MYSQL_PASSWORD: ${env:MYSQL_PASSWORD}
             MYSQL_DATABASE_CL: ${env:MYSQL_DATABASE_CL}
+            MYSQL_TLS_ENABLED: ${env:MYSQL_TLS_ENABLED, 'false'}
+            MYSQL_TLS_CA_FILE: ${env:MYSQL_TLS_CA_FILE, ''}
             APPOINTMENT_EVENT_BUS_ARN:
                 Fn::GetAtt:
                     - AppointmentEventBus

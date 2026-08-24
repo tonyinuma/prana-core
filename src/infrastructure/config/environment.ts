@@ -6,6 +6,9 @@ export interface MySqlConnectionConfig {
     user: string;
     password: string;
     database: string;
+    tls?: {
+        caFilePath: string;
+    };
 }
 
 export function getAppointmentsTableName(): string {
@@ -23,6 +26,7 @@ export function getAppointmentEventBusArn(): string {
 export function getMySqlConnectionConfig(countryISO: CountryISO): MySqlConnectionConfig {
     const databaseVariable =
         countryISO === CountryISO.PE ? 'MYSQL_DATABASE_PE' : 'MYSQL_DATABASE_CL';
+    const tls = getMySqlTlsConfig();
 
     return {
         host: getRequiredEnvironmentVariable('MYSQL_HOST'),
@@ -30,6 +34,23 @@ export function getMySqlConnectionConfig(countryISO: CountryISO): MySqlConnectio
         user: getRequiredEnvironmentVariable('MYSQL_USER'),
         password: getRequiredEnvironmentVariable('MYSQL_PASSWORD'),
         database: getRequiredEnvironmentVariable(databaseVariable),
+        ...(tls === undefined ? {} : { tls }),
+    };
+}
+
+function getMySqlTlsConfig(): MySqlConnectionConfig['tls'] {
+    const enabled = process.env.MYSQL_TLS_ENABLED;
+
+    if (enabled === undefined || enabled === 'false') {
+        return undefined;
+    }
+
+    if (enabled !== 'true') {
+        throw new Error('MYSQL_TLS_ENABLED environment variable must be true or false');
+    }
+
+    return {
+        caFilePath: getRequiredEnvironmentVariable('MYSQL_TLS_CA_FILE'),
     };
 }
 

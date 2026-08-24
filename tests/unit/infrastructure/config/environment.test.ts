@@ -16,6 +16,8 @@ describe('infrastructure environment configuration', () => {
     const originalMySqlPassword = process.env.MYSQL_PASSWORD;
     const originalMySqlDatabasePe = process.env.MYSQL_DATABASE_PE;
     const originalMySqlDatabaseCl = process.env.MYSQL_DATABASE_CL;
+    const originalMySqlTlsEnabled = process.env.MYSQL_TLS_ENABLED;
+    const originalMySqlTlsCaFile = process.env.MYSQL_TLS_CA_FILE;
 
     afterEach(() => {
         restoreEnvironmentVariable('APPOINTMENTS_TABLE_NAME', originalTableName);
@@ -27,6 +29,8 @@ describe('infrastructure environment configuration', () => {
         restoreEnvironmentVariable('MYSQL_PASSWORD', originalMySqlPassword);
         restoreEnvironmentVariable('MYSQL_DATABASE_PE', originalMySqlDatabasePe);
         restoreEnvironmentVariable('MYSQL_DATABASE_CL', originalMySqlDatabaseCl);
+        restoreEnvironmentVariable('MYSQL_TLS_ENABLED', originalMySqlTlsEnabled);
+        restoreEnvironmentVariable('MYSQL_TLS_CA_FILE', originalMySqlTlsCaFile);
     });
 
     test('returns the configured table name', () => {
@@ -124,6 +128,46 @@ describe('infrastructure environment configuration', () => {
             'MYSQL_DATABASE_PE environment variable is required',
         );
     });
+
+    test('returns the configured TLS certificate when TLS is enabled', () => {
+        setValidMySqlEnvironment();
+        process.env.MYSQL_TLS_ENABLED = 'true';
+        process.env.MYSQL_TLS_CA_FILE = 'certificates/aiven-ca.pem';
+
+        expect(getMySqlConnectionConfig(CountryISO.PE)).toEqual(
+            expect.objectContaining({
+                tls: {
+                    caFilePath: 'certificates/aiven-ca.pem',
+                },
+            }),
+        );
+    });
+
+    test('does not configure TLS when it is explicitly disabled', () => {
+        setValidMySqlEnvironment();
+        process.env.MYSQL_TLS_ENABLED = 'false';
+
+        expect(getMySqlConnectionConfig(CountryISO.PE)).not.toHaveProperty('tls');
+    });
+
+    test('rejects an invalid TLS enabled value', () => {
+        setValidMySqlEnvironment();
+        process.env.MYSQL_TLS_ENABLED = 'yes';
+
+        expect(() => getMySqlConnectionConfig(CountryISO.PE)).toThrow(
+            'MYSQL_TLS_ENABLED environment variable must be true or false',
+        );
+    });
+
+    test('requires a CA file when TLS is enabled', () => {
+        setValidMySqlEnvironment();
+        process.env.MYSQL_TLS_ENABLED = 'true';
+        delete process.env.MYSQL_TLS_CA_FILE;
+
+        expect(() => getMySqlConnectionConfig(CountryISO.PE)).toThrow(
+            'MYSQL_TLS_CA_FILE environment variable is required',
+        );
+    });
 });
 
 function setValidMySqlEnvironment(): void {
@@ -133,6 +177,8 @@ function setValidMySqlEnvironment(): void {
     process.env.MYSQL_PASSWORD = 'local-password';
     process.env.MYSQL_DATABASE_PE = 'prana_pe';
     process.env.MYSQL_DATABASE_CL = 'prana_cl';
+    delete process.env.MYSQL_TLS_ENABLED;
+    delete process.env.MYSQL_TLS_CA_FILE;
 }
 
 function restoreEnvironmentVariable(name: string, value: string | undefined): void {
