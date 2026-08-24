@@ -1,5 +1,6 @@
-import type { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { APIGatewayProxyEventV2, SQSEvent, SQSRecord } from 'aws-lambda';
 
+import { AppointmentStatus } from '../../../../src/domain/enums/AppointmentStatus';
 import { CountryISO } from '../../../../src/domain/enums/CountryISO';
 import {
     createAppointmentPublisher,
@@ -26,7 +27,7 @@ describe('appointment HTTP handler', () => {
         restoreEnvironmentVariable('APPOINTMENT_TOPIC_ARN', originalTopicArn);
     });
 
-    test('routes POST and GET through the configured local dependencies', async () => {
+    test('routes POST, completion SQS, and GET through shared local dependencies', async () => {
         const firstCreateResponse = await handler(
             httpEvent('POST /appointments', {
                 body: JSON.stringify({
@@ -45,6 +46,18 @@ describe('appointment HTTP handler', () => {
                 }),
             }),
         );
+        const createdAppointment = JSON.parse(firstCreateResponse.body ?? '') as {
+            appointmentId: string;
+        };
+
+        const completionResponse = await handler(
+            completionSqsEvent('message-1', {
+                appointmentId: createdAppointment.appointmentId,
+                insuredId: '00701',
+                countryISO: CountryISO.PE,
+            }),
+        );
+        const reusedCompletionResponse = await handler({ Records: [] } as unknown as SQSEvent);
 
         const getResponse = await handler(
             httpEvent('GET /appointments/{insuredId}', {
@@ -53,12 +66,16 @@ describe('appointment HTTP handler', () => {
         );
 
         expect(firstCreateResponse.statusCode).toBe(202);
+        expect(completionResponse).toEqual({ batchItemFailures: [] });
+        expect(reusedCompletionResponse).toEqual({ batchItemFailures: [] });
         expect(getResponse.statusCode).toBe(200);
         expect(JSON.parse(getResponse.body ?? '')).toEqual([
             expect.objectContaining({
                 insuredId: '00701',
                 scheduleId: 100,
                 countryISO: CountryISO.PE,
+                status: AppointmentStatus.Completed,
+                updatedAt: '2026-08-24T18:00:00.000Z',
             }),
         ]);
     });
@@ -92,6 +109,25 @@ function httpEvent(
         routeKey,
         ...overrides,
     } as APIGatewayProxyEventV2;
+}
+
+function completionSqsEvent(
+    messageId: string,
+    detail: { appointmentId: string; insuredId: string; countryISO: CountryISO },
+): SQSEvent {
+    return {
+        Records: [
+            {
+                messageId,
+                body: JSON.stringify({
+                    source: 'prana.appointments',
+                    'detail-type': 'AppointmentCompleted',
+                    time: '2026-08-24T18:00:00.000Z',
+                    detail,
+                }),
+            } as SQSRecord,
+        ],
+    } as SQSEvent;
 }
 
 function restoreEnvironmentVariable(name: string, value: string | undefined): void {

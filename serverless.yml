@@ -20,6 +20,7 @@ provider:
                   Action:
                       - dynamodb:PutItem
                       - dynamodb:Query
+                      - dynamodb:UpdateItem
                   Resource:
                       - Fn::GetAtt:
                             - AppointmentsTable
@@ -59,6 +60,13 @@ functions:
             - httpApi:
                   path: /appointments/{insuredId}
                   method: get
+            - sqs:
+                  arn:
+                      Fn::GetAtt:
+                          - AppointmentCompletedQueue
+                          - Arn
+                  batchSize: 10
+                  functionResponseType: ReportBatchItemFailures
     appointmentPe:
         name: ${self:service}-${sls:stage}-appointment-pe
         handler: src/handlers/appointmentPE.handler
